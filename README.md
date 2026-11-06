@@ -57,6 +57,12 @@ OpenSEO supports two self-hosting paths. Both use email and password accounts: t
   - Running the older single-container image? It keeps getting updates; [move to the new setup](./docs/SELF_HOSTING_DOCKER.md#move-from-the-old-docker-image) when you are ready, data included.
 - **Cloudflare** - No server to run: one deploy command puts OpenSEO on your own Cloudflare account (works on the free plan). See [`docs/SELF_HOSTING_CLOUDFLARE.md`](./docs/SELF_HOSTING_CLOUDFLARE.md).
 
+### CLICKSRUN
+
+Panel interno de la agencia, en la misma línea que agenda.clicksrun.com. El despliegue sigue la guía de Cloudflare de arriba. Access, noindex, nombres de secretos, R2 y DataForSEO están en [`docs/CLICKSRUN.md`](./docs/CLICKSRUN.md).
+
+Antes del primer deploy, en `.env.selfhost` (git lo ignora): `AUTH_MODE=cloudflare_access` y `ACCESS_ALLOWED_EMAILS`. La plantilla trae `AUTH_MODE=password`. En ese modo la primera visita crea el administrador, así que no dejes la URL abierta. `DATAFORSEO_API_KEY` se añade en ese mismo archivo cuando la cuenta de DataForSEO esté fondeada. Activar R2 pide un método de pago en Cloudflare aunque el uso entre en el tramo gratis.
+
 For security-conscious setups, two advanced options replace the accounts with your own network controls:
 
 - **Cloudflare Access** in front of the Cloudflare deploy, so Cloudflare checks every request before it reaches OpenSEO. See [`docs/SELF_HOSTING_CLOUDFLARE.md`](./docs/SELF_HOSTING_CLOUDFLARE.md).
