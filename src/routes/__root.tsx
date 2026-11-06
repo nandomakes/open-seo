@@ -15,6 +15,10 @@ import { captureGoogleLinkError } from "@/client/features/integrations/googleLin
 import { ExportToSheetsModal } from "@/client/components/table/ExportToSheetsModal";
 import { themePreferenceInitScript } from "@/client/lib/theme";
 import { runtimeAuthModeScript } from "@/lib/auth-mode";
+import {
+  isCloudflareSelfHostBuild,
+  SELF_HOST_ROBOTS,
+} from "@/shared/selfhost-indexing";
 import { NotFound } from "@/client/components/NotFound";
 import { PrivacyBootstrap } from "@/client/components/PrivacyChoices";
 import { TooltipProvider } from "@/client/components/ui/tooltip";
@@ -48,6 +52,11 @@ export const Route = createRootRoute({
         name: "google",
         content: "notranslate",
       },
+      // Cloudflare self-host only (`vite build --mode selfhost`). The same
+      // directive is sent as X-Robots-Tag from appFetch in src/server.ts.
+      ...(isCloudflareSelfHostBuild()
+        ? [{ name: "robots", content: SELF_HOST_ROBOTS }]
+        : []),
       {
         name: "apple-mobile-web-app-capable",
         content: "yes",

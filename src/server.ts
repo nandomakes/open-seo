@@ -33,6 +33,10 @@ import {
 } from "@/server/billing/autumn-webhook";
 import { sweepDubReferredOrganizations } from "@/server/referrals/dub";
 import { maybeSendSelfHostHeartbeat } from "@/server/lib/self-host-telemetry";
+import {
+  isCloudflareSelfHostBuild,
+  SELF_HOST_ROBOTS,
+} from "@/shared/selfhost-indexing";
 import { handleOperatorRequest } from "@/server/standalone/admin";
 import { handleImport, isLegacyImportActive } from "@/server/standalone/import";
 import { hasOperatorSecret } from "@/server/standalone/operator-auth";
@@ -47,22 +51,33 @@ const startHandler = createStartHandler(defaultStreamHandler);
 // __root.tsx plus allowances for Turnstile and PostHog, which is separate,
 // larger work.
 //
-// Only HTML documents, and only ones that carry no policy of their own, so a
+// Only HTML documents, and only ones that carry no CSP of their own, so a
 // route that sets its own stricter CSP keeps it (two CSP headers intersect, so
 // adding a second could only confuse things). Wrapping the handler rather than
 // one call site covers the OAuth-provider path too, which serves app documents
 // through this same function.
+//
+// The Cloudflare self-host build also sends `X-Robots-Tag: noindex, nofollow`
+// on HTML that does not already set one (the shell meta tag is in __root.tsx),
+// so a panel URL is not offered to search engines. Login is separate:
+// Cloudflare Access, or password accounts.
 async function appFetch(request: Request): Promise<Response> {
   const response = await startHandler(request);
   const contentType = response.headers.get("content-type") ?? "";
-  if (
-    !contentType.startsWith("text/html") ||
-    response.headers.has("content-security-policy")
-  ) {
+  if (!contentType.startsWith("text/html")) {
     return response;
   }
   const headers = new Headers(response.headers);
-  headers.set("Content-Security-Policy", "frame-ancestors 'self'");
+  let changed = false;
+  if (!headers.has("content-security-policy")) {
+    headers.set("Content-Security-Policy", "frame-ancestors 'self'");
+    changed = true;
+  }
+  if (isCloudflareSelfHostBuild() && !headers.has("x-robots-tag")) {
+    headers.set("X-Robots-Tag", SELF_HOST_ROBOTS);
+    changed = true;
+  }
+  if (!changed) return response;
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
